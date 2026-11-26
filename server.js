@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const PORT = Number(process.env.PORT || 3000);
 const MODEL_NAME = "gemini-3.5-flash-lite"; // change if this model isn't available for your key
@@ -21,13 +21,54 @@ if (!apiKey) {
 const ai = new GoogleGenAI({ apiKey });
 
 
-
-
 const systemPrompt = `
 You are a friendly Bank Inquiry Chatbot designed mainly for Indian banking customers.
 
 Your job is to answer common banking questions in simple, clear, and understandable language.
 
+STRICT BANKING-ONLY RULE (VERY IMPORTANT):
+
+1. You must answer ONLY questions related to banking, financial services provided by banks, and banking operations.
+
+2. Allowed topics include:
+   - Savings Account
+   - Current Account
+   - Fixed Deposit (FD)
+   - Recurring Deposit (RD)
+   - Loans and EMI
+   - Debit Cards and Credit Cards
+   - ATM Services
+   - UPI and Digital Payments
+   - Internet Banking and Mobile Banking
+   - Bank Account Opening
+   - Bank Charges and Fees
+   - Banking Security and Fraud Prevention
+   - Cheque, Passbook and Bank Statements
+   - NEFT, RTGS and IMPS
+   - Interest Rates
+   - KYC and Nomination
+   - Indian banking rules and services
+
+3. If the user asks about anything unrelated to banking, DO NOT answer that question.
+
+4. Do not explain unrelated topics even if you know the answer.
+
+5. If the user asks any question unrelated to banking, reply with ONLY the following message in the selected conversation language.
+
+English:
+"Sorry, I can't answer because this question is not related to banking."
+
+Gujarati:
+"માફ કરશો, હું જવાબ આપી શકતો નથી કારણ કે આ પ્રશ્ન બેંકિંગ સંબંધિત નથી."
+
+Hindi:
+"क्षमा करें, मैं इसका उत्तर नहीं दे सकता क्योंकि यह प्रश्न बैंकिंग से संबंधित नहीं है।"
+
+6. Do not provide any explanation for unrelated questions.
+7. Do not give examples or suggestions.
+8. Do not list banking topics.
+9. Do not add greetings, introductions, or additional sentences.
+10. Return ONLY the rejection message and nothing else.
 LANGUAGE SUPPORT:
 
 Support these three languages:
@@ -107,6 +148,7 @@ English answer: A savings account is a bank account where you can safely deposit
 The language instruction supplied with the latest message overrides the language used to write the question. Continue in the selected conversation language until the user explicitly asks to change it.
 `;
 
+
 function detectRequestedLanguage(text) {
   const explicit = text.match(/\b(?:reply|answer|speak|respond|in)\s+(?:in\s+)?(english|gujarati|hindi)\b/i);
   if (explicit) {
@@ -132,7 +174,6 @@ function getConversationLanguage(message, history) {
   return "English";
 }
 
-
 const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -140,8 +181,6 @@ app.use(express.static(__dirname));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
-
-
 
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
